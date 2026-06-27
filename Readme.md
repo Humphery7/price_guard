@@ -4,9 +4,23 @@ Price Guard is a pricing intelligence platform that automatically monitors margi
 
 ---
 
+## High-Level Pipeline Overview
+
+The Price Guard platform operates through a daily automated pipeline designed to provide comprehensive pricing intelligence. This pipeline orchestrates several key processes:
+
+1.  **Data Ingestion:** Gathers product data from internal sources (Glovo BigQuery), partner-provided Google Sheets (SPAR, SuperSaver), and web scrapers (Mano, Chowdeck).
+2.  **Product Matching:** Links internal products to their corresponding competitor products using a sophisticated matching engine. This can run on-demand or periodically.
+3.  **Metric Calculation & Anomaly Detection:** Computes various pricing metrics (margins, price index, etc.) and identifies anomalies such as cost spikes or competitor pricing gaps.
+4.  **Data Persistence:** Stores all processed data, computed metrics, and detected alerts in BigQuery for fast access and historical analysis.
+5.  **Reporting & Alerts:** Generates and emails a daily summary of critical pricing issues to relevant stakeholders, and populates a web dashboard for interactive exploration.
+
+This integrated pipeline ensures that stakeholders receive timely and accurate pricing insights without manual intervention.
+
+---
+
 ## How It Works
 
-The system now uses a **single Google Sheet** as the source for all internal product data, eliminating the need for BigQuery. The daily pipeline reads from this sheet, processes competitor data from SPAR and SuperSaver sheets, and generates metrics and alerts.
+The system pulls your internal product catalog from Glovo's BigQuery data warehouse. The daily pipeline then reads this internal data, processes competitor data from SPAR and SuperSaver Google Sheets (linked to BigQuery), and integrates scraped data to generate metrics and alerts.
 
 Every morning at 8:00 AM, the system automatically:
 
@@ -262,11 +276,11 @@ Paste your SuperSaver product pricing data below the headers.
 
 This automates the Mano and Chowdeck scrapers so they run automatically every day and upload results to BigQuery.
 
-**Step 1:** Push this project to a GitHub repository (or create a new one).
+**Step 1:** Push this entire project to a GitHub repository (or create a new one). Ensure the `.github/workflows/daily_pipeline.yml` file is included. Simply pushing this file to the correct path in your repository will set up the GitHub Actions workflow automatically.
 
 **Step 2:** Go to your repository on GitHub → **Settings** → **Secrets and variables** → **Actions**.
 
-**Step 3:** Add the following repository secrets:
+**Step 3:** Add the following repository secrets. These are crucial for the GitHub Action to authenticate with Google Cloud and write to BigQuery:
 
 | Secret Name | Value |
 |---|---|
@@ -281,7 +295,10 @@ This automates the Mano and Chowdeck scrapers so they run automatically every da
 > 4. Click the service account → **Keys** → **Add Key** → **Create new key** → **JSON**.
 > 5. Copy the entire contents of the downloaded JSON file.
 
-**Step 4:** The workflow file is already at `.github/workflows/daily_pipeline.yml`. It will automatically run every day at 7:00 AM WAT (one hour before the GAS trigger).
+**Step 4:** The workflow defined in `.github/workflows/daily_pipeline.yml` will now automatically run based on several triggers:
+-   **Scheduled Run:** It will run every day at 7:00 AM WAT (6:00 AM UTC), one hour before the Google Apps Script trigger.
+-   **Manual Run:** You can manually trigger it from your GitHub repository by navigating to **Actions** -> **Price Guard Daily Pipeline** -> **Run workflow**. You'll have an option to "Also run the matching engine?".
+-   **Repository Dispatch:** The Google Apps Script (GAS) app, once configured in Step 5 below, will dispatch this workflow to run the scrapers or re-run the matching engine.
 
 **Step 5:** Connect the GAS app to dispatch scraper runs:
 - Go back to your Apps Script **Script Properties** (Phase 5).
