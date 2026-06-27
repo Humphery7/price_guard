@@ -1,0 +1,100 @@
+# Price Guard — Automated Daily Pipeline
+# 
+# This workflow runs the Python data pipeline:
+# 1. Scrape competitor prices (Mano, Chowdeck)
+# 2. Upload scraped data to BigQuery
+# 3. Optionally run the product matching engine
+#
+# Triggers:
+# - Scheduled: Every day at 6:00 AM UTC (7:00 AM WAT)
+# - Manual: From GitHub Actions UI
+# - Repository Dispatch: From Google Apps Script (run_scrapers or run_rematch)
+
+name: Price Guard Daily Pipeline
+
+on:
+  schedule:
+    # Run at 6:00 AM UTC = 7:00 AM WAT (1 hour before the 8 AM GAS trigger)
+    - cron: '0 6 * * *'
+  
+  workflow_dispatch:
+    inputs:
+      run_matching:
+        description: 'Also run the matching engine?'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+  
+  repository_dispatch:
+    types: [run_scrapers, run_rematch]
+
+env:
+  BQ_PROJECT_ID: ${{ secrets.BQ_PROJECT_ID }}
+  BQ_DATASET: ${{ secrets.BQ_DATASET || 'price_guard' }}
+  GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-key.json
+
+jobs:
+  scrape-and-upload:
+    name: Scrape & Upload Competitor Data
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        run: |
+          pip install playwright pandas rapidfuzz google-cloud-bigquery
+          playwright install chromium
+          playwright install-deps
+
+      - name: Authenticate to Google Cloud
+        run: |
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > /tmp/gcp-key.json
+
+      # ─────────────────────────────────────────────
+      # Step 1: Run Scrapers
+      # ─────────────────────────────────────────────
+      - name: Run Mano Scraper
+        run: python competitors/scrapers/mano_scraper.py
+        continue-on-error: true
+
+      - name: Run Chowdeck Scraper
+        run: python competitors/scrapers/chowstore_scraper.py
+        continue-on-error: true
+
+      # ─────────────────────────────────────────────
+      # Step 2: Upload to BigQuery
+      # ─────────────────────────────────────────────
+      - name: Upload Scraped Data to BigQuery
+        run: python upload_scraped_data.py
+
+      # ─────────────────────────────────────────────
+      # Step 3: Run Matching Engine (conditional)
+      # ─────────────────────────────────────────────
+      - name: Run Matching Engine
+        if: |
+          github.event_name == 'repository_dispatch' && github.event.action == 'run_rematch' ||
+          github.event.inputs.run_matching == 'true'
+        env:
+          MATCH_MODE: bigquery
+        run: python matching_engine.py
+
+      - name: Pipeline Summary
+        run: |
+          echo "═══════════════════════════════════════════"
+          echo "Price Guard Pipeline Complete"
+          echo "═══════════════════════════════════════════"
+          echo "Trigger: ${{ github.event_name }}"
+          echo "Time: $(date -u)"
+          echo "═══════════════════════════════════════════"

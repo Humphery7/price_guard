@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Price Guard – Pricing Intelligence Dashboard</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Styling System & Variables */
+    :root {
+      --font-primary: 'Plus Jakarta Sans', sans-serif;
+      --font-title: 'Outfit', sans-serif;
+      
+      /* Light Theme Palettes (Default) */
+      --bg-main: #F8FAFC;
+      --bg-sidebar: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --border-color: #E2E8F0;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --accent-primary: #4F46E5;
+      --accent-hover: #4338CA;
+      --accent-light: rgba(79, 70, 229, 0.06);
+      
+      /* Status Colors */
+      --color-green: #10B981;
+      --color-yellow: #F59E0B;
+      --color-orange: #F97316;
+      --color-red: #EF4444;
+      
+      --glass-blur: blur(12px);
+      --shadow-premium: 0 4px 20px -2px rgba(52, 73, 94, 0.06), 0 2px 12px -2px rgba(52, 73, 94, 0.04);
+    }
+
+    [data-theme="dark"] {
+      /* Dark Theme Palettes */
+      --bg-main: #0B0F19;
+      --bg-sidebar: #111827;
+      --bg-card: #1F2937;
+      --border-color: #374151;
+      --text-main: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --accent-primary: #3B82F6;
+      --accent-hover: #2563EB;
+      --accent-light: rgba(59, 130, 246, 0.1);
+      
+      --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-primary);
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Glassmorphism utility cards */
+    .glass-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: var(--shadow-premium);
+      padding: 20px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+    }
+
+    .glass-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -10px rgba(52, 73, 94, 0.12);
+    }
+
+    /* Layout structure */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar styles */
+    .sidebar {
+      width: 260px;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      padding: 25px 16px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .sidebar-brand {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--text-main);
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-left: 8px;
+    }
+
+    .sidebar-brand i {
+      color: var(--accent-primary);
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+
+    .menu-item {
+      margin-bottom: 4px;
+    }
+
+    .menu-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 13.5px;
+      transition: all 0.2s ease;
+    }
+
+    .menu-link:hover {
+      color: var(--text-main);
+      background-color: var(--accent-light);
+    }
+
+    .menu-link.active {
+      color: var(--accent-primary);
+      background-color: var(--accent-light);
+      font-weight: 600;
+    }
+
+    /* Main view portal */
+    .main-viewport {
+      margin-left: 260px;
+      padding: 30px;
+      width: calc(100% - 260px);
+      min-height: 100vh;
+      transition: background-color 0.3s ease;
+    }
+
+    /* Header component styling */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .page-title {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 22px;
+      margin: 0;
+      color: var(--text-main);
+    }
+
+    /* Dynamic page transitions */
+    .view-section {
+      display: none;
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Badges */
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+
+    .badge-critical { background-color: rgba(239, 68, 68, 0.12); color: var(--color-red); }
+    .badge-high { background-color: rgba(249, 115, 22, 0.12); color: var(--color-orange); }
+    .badge-warning { background-color: rgba(245, 158, 11, 0.12); color: var(--color-yellow); }
+    .badge-green { background-color: rgba(16, 185, 129, 0.12); color: var(--color-green); }
+
+    /* Tables */
+    .premium-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .premium-table th {
+      background-color: transparent;
+      border-bottom: 2px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 12px 14px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .premium-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+      font-size: 13px;
+      color: var(--text-main);
+    }
+
+    .premium-table tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .premium-table tr:hover {
+      background-color: rgba(79, 70, 229, 0.02);
+    }
+
+    /* Form control theming */
+    .form-control, .form-select {
+      background-color: var(--bg-sidebar);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 13.5px;
+      padding: 8px 12px;
+      transition: all 0.2s ease;
+    }
+
+    .form-control::placeholder {
+      color: var(--text-muted);
+      opacity: 0.8;
+    }
+
+    .form-control:focus, .form-select:focus {
+      background-color: var(--bg-sidebar);
+      color: var(--text-main);
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    /* Buttons */
+    .btn {
+      font-size: 13.5px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    /* Theme Switcher Toggle */
+    .theme-toggle-btn {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .theme-toggle-btn:hover {
+      background-color: var(--accent-light);
+    }
+
+    /* Spinner loader overlay */
+    .loading-spinner-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-main);
+      opacity: 0.95;
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      color: var(--accent-primary);
+    }
+
+    .progress {
+      background-color: var(--border-color);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fullscreen Loading Spinner Overlay -->
+  <div id="loader" class="loading-spinner-overlay">
+    <div class="text-center">
+      <div class="spinner-border mb-3" role="status"></div>
+      <p style="color: var(--text-main); font-weight: 500;">Retrieving pricing intelligence...</p>
+    </div>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- Sidebar Menu Navigator -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <i class="bi bi-shield-check"></i>
+        <span>Price Guard</span>
+      </div>
+      
+      <ul class="sidebar-menu">
+        <li class="menu-item"><a href="#dashboard" class="menu-link active" onclick="switchView('dashboard')"><i class="bi bi-grid-1x2"></i> Dashboard</a></li>
+        <li class="menu-item"><a href="#products" class="menu-link" onclick="switchView('products')"><i class="bi bi-box-seam"></i> Products Catalog</a></li>
+        <li class="menu-item"><a href="#alerts" class="menu-link" onclick="switchView('alerts')"><i class="bi bi-exclamation-triangle"></i> Pricing Alerts</a></li>
+        <li class="menu-item"><a href="#competitors" class="menu-link" onclick="switchView('competitors')"><i class="bi bi-graph-up"></i> Market Matrix</a></li>
+        <li class="menu-item"><a href="#margin_health" class="menu-link" onclick="switchView('margin_health')"><i class="bi bi-percent"></i> Margin Analysis</a></li>
+        <li class="menu-item"><a href="#revenue_at_risk" class="menu-link" onclick="switchView('revenue_at_risk')"><i class="bi bi-cash-stack"></i> Revenue Leakage</a></li>
+        <li class="menu-item"><a href="#opportunity_finder" class="menu-link" onclick="switchView('opportunity_finder')"><i class="bi bi-lightning-charge"></i> Opportunity Finder</a></li>
+        <li class="menu-item"><a href="#supplier_health" class="menu-link" onclick="switchView('supplier_health')"><i class="bi bi-shop"></i> Supplier Health</a></li>
+        <li class="menu-item"><a href="#category_health" class="menu-link" onclick="switchView('category_health')"><i class="bi bi-tags"></i> Category Health</a></li>
+        <li class="menu-item"><a href="#match_management" class="menu-link" onclick="switchView('match_management')"><i class="bi bi-link-45deg"></i> Match Management</a></li>
+        <li class="menu-item"><a href="#settings" class="menu-link" onclick="switchView('settings')"><i class="bi bi-gear"></i> System Settings</a></li>
+      </ul>
+      
+      <hr style="color: var(--border-color); margin: 15px 0;">
+      <div class="sidebar-footer">
+        <button class="theme-toggle-btn w-100 justify-content-center" onclick="toggleTheme()">
+          <i id="theme-icon" class="bi bi-moon-stars"></i> <span id="theme-text">Dark Mode</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main View Content Area -->
+    <main class="main-viewport">
+      
+      <!-- ==================== DASHBOARD VIEW ==================== -->
+      <section id="dashboard" class="view-section active">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Executive Pricing Summary</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Cross-competitor metrics and potential profit index tracking</p>
+          </div>
+          <button class="btn btn-primary" onclick="triggerManualSync()"><i class="bi bi-arrow-repeat"></i> Run Sync Job</button>
+        </div>
+        
+        <!-- KPI Cards Grid -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-4">
+            <div class="glass-card text-center">
+              <span class="text-muted d-block mb-1 font-semibold text-uppercase" style="font-size: 10px; letter-spacing: 0.5px;">Overall Gross Margin</span>
+              <h2 id="kpi-margin" class="font-bold text-primary mb-2" style="font-size: 28px; font-family: var(--font-title); font-weight: 700;">0.0%</h2>
+              <span class="status-badge badge-green"><i class="bi bi-caret-up-fill"></i> Health Score Ok</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="glass-card text-center">
+              <span class="text-muted d-block mb-1 font-semibold text-uppercase" style="font-size: 10px; letter-spacing: 0.5px;">Total Gross Profit</span>
+              <h2 id="kpi-profit" class="font-bold text-success mb-2" style="font-size: 28px; font-family: var(--font-title); font-weight: 700;">₦0</h2>
+              <span class="text-muted" style="font-size: 12px;">Latest catalog period sales</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="glass-card text-center">
+              <span class="text-muted d-block mb-1 font-semibold text-uppercase" style="font-size: 10px; letter-spacing: 0.5px;">Revenue At Risk</span>
+              <h2 id="kpi-risk" class="font-bold text-danger mb-2" style="font-size: 28px; font-family: var(--font-title); font-weight: 700;">₦0</h2>
+              <span class="status-badge badge-critical" id="kpi-critical-alerts">0 Alerts</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-8">
+            <div class="glass-card">
+              <h3 class="mb-4" style="font-size: 15px; font-weight: 600;">Pricing Metrics Breakdown</h3>
+              <canvas id="profitChart" style="max-height: 320px;"></canvas>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="glass-card h-100">
+              <h3 class="mb-3" style="font-size: 15px; font-weight: 600;">Critical Actions Needed</h3>
+              <div id="dashboard-actions-list" class="list-group list-group-flush bg-transparent">
+                <!-- Dyn content -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== PRODUCTS CATALOG ==================== -->
+      <section id="products" class="view-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Catalog Inventory & Competitor Margins</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Detailed view of selling vs competitor prices</p>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <input type="text" id="catalog-search" class="form-control" placeholder="Search catalog items..." oninput="filterCatalogTable()">
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Product Name</th>
+                  <th>Supplier</th>
+                  <th>Cost Today</th>
+                  <th>Selling Today</th>
+                  <th>Margin Today</th>
+                  <th>Market Median</th>
+                  <th>Price Index</th>
+                  <th>Risk Score</th>
+                </tr>
+              </thead>
+              <tbody id="catalog-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== PRICING ALERTS ==================== -->
+      <section id="alerts" class="view-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Pricing Anomalies Queue</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Pricing adjustments and margin alerts triggered by system thresholds</p>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="table-responsive">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>Product / SKU</th>
+                  <th>Alert Type</th>
+                  <th>Explanation / Details</th>
+                  <th>Severity</th>
+                  <th>Revenue Weight</th>
+                </tr>
+              </thead>
+              <tbody id="alerts-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== COMPETITORS MATRIX ==================== -->
+      <section id="competitors" class="view-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Competitor Pricing Index Matrix</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Comparative price index analysis per major competitor</p>
+          </div>
+        </div>
+        <div class="glass-card">
+          <canvas id="competitorChart" style="max-height: 400px;"></canvas>
+        </div>
+      </section>
+
+      <!-- ==================== MARGIN HEALTH ==================== -->
+      <section id="margin_health" class="view-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Margin Leakage Monitoring</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Margins analysis over time and supplier discrepancies</p>
+          </div>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="glass-card">
+              <h3 class="mb-3" style="font-size: 15px; font-weight: 600;">Margin Leakage by Supplier</h3>
+              <div id="margin-supplier-list"></div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="glass-card">
+              <h3 class="mb-3" style="font-size: 15px; font-weight: 600;">Margin Leakage by Category</h3>
+              <div id="margin-category-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== REVENUE AT RISK ==================== -->
+      <section id="revenue_at_risk" class="view-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Revenue At Risk Analysis</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Valuable items facing drop in demand due to higher market premiums</p>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="table-responsive">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Today Price</th>
+                  <th>Market Median</th>
+                  <th>Price Index</th>
+                  <th>Monthly Revenue</th>
+                  <th>Risk Contribution</th>
+                </tr>
+              </thead>
+              <tbody id="rev-risk-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== OPPORTUNITY FINDER ==================== -->
+      <section id="opportunity_finder" class="view-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Smart Price Optimization Recommendations</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Items priced lower than competitor averages offering margin expansion potential</p>
+          </div>
+        </div>
+        <div class="glass-card">
+          <div class="table-responsive">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Selling Price</th>
+                  <th>Market Median</th>
+                  <th>Gap</th>
+                  <th>Monthly Sales Volume</th>
+                  <th>Potential Monthly Profit</th>
+                  <th>Opportunity Rating</th>
+                </tr>
+              </thead>
+              <tbody id="opp-finder-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SUPPLIER HEALTH ==================== -->
+      <section id="supplier_health" class="view-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Supplier Performance Matrix</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Margin values and pricing accuracy health scores aggregated by suppliers</p>
+          </div>
+        </div>
+        <div class="row g-4" id="supplier-health-container">
+          <!-- Dyn supplier cards -->
+        </div>
+      </section>
+
+      <!-- ==================== CATEGORY HEALTH ==================== -->
+      <section id="category_health" class="view-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Category Health Matrix</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Volume weights and pricing margins aggregated by internal product categories</p>
+          </div>
+        </div>
+        <div class="row g-4" id="category-health-container">
+          <!-- Dyn category cards -->
+        </div>
+      </section>
+
+      <!-- ==================== MATCH MANAGEMENT ==================== -->
+      <section id="match_management" class="view-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Matching Index Queue</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Approve, reject or manually match competitor names to internal SKUs</p>
+          </div>
+        </div>
+        
+        <div class="glass-card mb-4">
+          <h3 style="font-size: 15px; margin-bottom: 20px; font-weight: 600;">Manual Matching & Rematching Console</h3>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <input type="text" id="manual-sku" class="form-control" placeholder="Product SKU">
+            </div>
+            <div class="col-md-3">
+              <select id="manual-competitor" class="form-select">
+                <option value="mano">Mano</option>
+                <option value="chowstore">Chowdeck</option>
+                <option value="spar">SPAR</option>
+                <option value="supersaver">SuperSaver</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <input type="text" id="manual-name" class="form-control" placeholder="Competitor Product Name">
+            </div>
+            <div class="col-md-2">
+              <input type="number" id="manual-price" class="form-control" placeholder="Price (₦)">
+            </div>
+            <div class="col-md-1">
+              <button class="btn btn-success w-100" onclick="submitOverride()"><i class="bi bi-save"></i> Save</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 style="font-size: 15px; margin-bottom: 20px; font-weight: 600;">Pending Match Review Queue</h3>
+          <div class="table-responsive">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>SKU</th>
+                  <th>Competitor</th>
+                  <th>Matched Listing Name</th>
+                  <th>Price</th>
+                  <th>Confidence Score</th>
+                  <th>Match Method</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="matches-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== SYSTEM SETTINGS ==================== -->
+      <section id="settings" class="view-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Platform Config Rules</h1>
+            <p class="text-muted m-0" style="font-size: 13px;">Adjust thresholds and connect external Python adapters</p>
+          </div>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="glass-card">
+              <h3 class="mb-4" style="font-size: 15px; font-weight: 600;">Pricing Alerts Thresholds</h3>
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 13px; font-weight: 500;">Selling Price Spike (Critical %)</label>
+                <input type="number" step="0.05" id="cfg-price-spike-critical" class="form-control">
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 13px; font-weight: 500;">Cost Price Spike (Critical %)</label>
+                <input type="number" step="0.05" id="cfg-cost-spike-critical" class="form-control">
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 13px; font-weight: 500;">Competitor Premium Threshold (Critical %)</label>
+                <input type="number" step="0.05" id="cfg-comp-premium-critical" class="form-control">
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="glass-card">
+              <h3 class="mb-4" style="font-size: 15px; font-weight: 600;">System Channels & Pipeline Integration</h3>
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 13px; font-weight: 500;">Pricing Alerts Digest Recipient</label>
+                <input type="email" id="cfg-email-recipients" class="form-control">
+              </div>
+              <div class="mb-3">
+                <label class="form-label" style="font-size: 13px; font-weight: 500;">GitHub Pipeline Repo Dispatch PATH</label>
+                <input type="text" id="cfg-github-repo" class="form-control">
+              </div>
+              <button class="btn btn-primary mt-3" onclick="saveSettingsForm()"><i class="bi bi-check-circle"></i> Save Settings</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Client-Side Routing and UI Logic -->
+  <script>
+    var globalProducts = [];
+    var globalMatches = [];
+    var globalAlerts = [];
+    var globalSettings = {};
+
+    window.onload = function() {
+      // Toggle to theme stored on load, defaults to light
+      var currentTheme = localStorage.getItem("price-guard-theme") || "light";
+      document.documentElement.setAttribute("data-theme", currentTheme);
+      updateThemeButtonState(currentTheme);
+      
+      // Load app dataset via RPC endpoints
+      loadSystemData();
+    };
+
+    function showLoader(show) {
+      document.getElementById("loader").style.display = show ? "flex" : "none";
+    }
+
+    function toggleTheme() {
+      var current = document.documentElement.getAttribute("data-theme");
+      var target = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", target);
+      localStorage.setItem("price-guard-theme", target);
+      updateThemeButtonState(target);
+      
+      // Redraw charts with colors corresponding to new theme
+      renderCharts();
+    }
+
+    function updateThemeButtonState(theme) {
+      var text = document.getElementById("theme-text");
+      var icon = document.getElementById("theme-icon");
+      if (theme === "dark") {
+        text.innerText = "Light Mode";
+        icon.className = "bi bi-sun";
+      } else {
+        text.innerText = "Dark Mode";
+        icon.className = "bi bi-moon-stars";
+      }
+    }
+
+    function switchView(viewId) {
+      document.querySelectorAll(".view-section").forEach(function(el) {
+        el.classList.remove("active");
+      });
+      document.querySelectorAll(".menu-link").forEach(function(el) {
+        el.classList.remove("active");
+      });
+      
+      document.getElementById(viewId).classList.add("active");
+      
+      // Highlight sidebar anchor link
+      var activeLink = document.querySelector('a[href="#' + viewId + '"]');
+      if (activeLink) activeLink.classList.add("active");
+      
+      // Trigger charts to redraw on resize
+      if (viewId === "dashboard" || viewId === "competitors") {
+        setTimeout(renderCharts, 100);
+      }
+    }
+
+    function loadSystemData() {
+      showLoader(true);
+      google.script.run
+        .withSuccessHandler(function(response) {
+          globalProducts = response.products;
+          globalMatches = response.matches;
+          globalAlerts = response.alerts;
+          globalSettings = response.settings;
+          
+          populateDashboard(response.summary);
+          populateCatalogTable(globalProducts);
+          populateAlertsTable(globalAlerts);
+          populateSupplierHealth(response.suppliers);
+          populateCategoryHealth(response.categories);
+          populateMatchesTable(globalMatches);
+          populateOpportunityTable(globalProducts);
+          populateRevenueRiskTable(globalProducts);
+          populateSettingsForm(globalSettings);
+          
+          renderCharts();
+          showLoader(false);
+        })
+        .withFailureHandler(function(err) {
+          alert("Error retrieving database sync values: " + err.toString());
+          showLoader(false);
+        })
+        .getCompositeDashboardData();
+    }
+
+    function populateDashboard(sum) {
+      document.getElementById("kpi-margin").innerText = (sum.overall_margin * 100).toFixed(1) + "%";
+      document.getElementById("kpi-profit").innerText = "₦" + sum.gross_profit.toLocaleString();
+      document.getElementById("kpi-risk").innerText = "₦" + sum.revenue_at_risk.toLocaleString();
+      document.getElementById("kpi-critical-alerts").innerText = sum.alerts.critical + " Alerts";
+      
+      // Populate quick dashboard action items
+      var list = document.getElementById("dashboard-actions-list");
+      list.innerHTML = "";
+      
+      var highSeverityAlerts = globalAlerts.filter(function(a) { return a.severity === 'critical' || a.severity === 'high'; }).slice(0, 5);
+      if (highSeverityAlerts.length === 0) {
+        list.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-emoji-smile d-block fs-3 mb-2"></i>No actions pending</div>';
+      } else {
+        highSeverityAlerts.forEach(function(a) {
+          var color = a.severity === 'critical' ? 'danger' : 'warning';
+          list.innerHTML += '<a href="#alerts" class="list-group-item bg-transparent border-0 px-0 py-2 d-flex align-items-start gap-3" style="color: var(--text-main); transition: all 0.2s;" onclick="switchView(\'alerts\')">' +
+            '<i class="bi bi-exclamation-circle-fill text-' + color + '" style="font-size: 16px;"></i>' +
+            '<div>' +
+            '<span style="font-weight: 500; font-size:13px; display:block;">' + a.product_name + '</span>' +
+            '<span style="font-size: 11px; color: var(--text-muted);">' + a.details + '</span>' +
+            '</div></a>';
+        });
+      }
+    }
+
+    function populateCatalogTable(prods) {
+      var tbody = document.getElementById("catalog-table-body");
+      tbody.innerHTML = "";
+      prods.forEach(function(p) {
+        var badgeColor = "green";
+        if (p.risk_score > 80) badgeColor = "critical";
+        else if (p.risk_score > 60) badgeColor = "high";
+        else if (p.risk_score > 30) badgeColor = "warning";
+        
+        tbody.innerHTML += '<tr>' +
+          '<td>' + p.product_sku + '</td>' +
+          '<td class="font-medium">' + p.product_name + '</td>' +
+          '<td>' + p.supplier_name + '</td>' +
+          '<td>₦' + p.cost_price_today.toLocaleString() + '</td>' +
+          '<td>₦' + p.selling_price_today.toLocaleString() + '</td>' +
+          '<td>' + (p.margin_today * 100).toFixed(1) + '%</td>' +
+          '<td>₦' + p.market_median_price.toLocaleString() + '</td>' +
+          '<td>' + p.price_index.toFixed(0) + '</td>' +
+          '<td><span class="status-badge badge-' + badgeColor + '">' + p.risk_score + '</span></td>' +
+          '</tr>';
+      });
+    }
+
+    function populateAlertsTable(alerts) {
+      var tbody = document.getElementById("alerts-table-body");
+      tbody.innerHTML = "";
+      alerts.forEach(function(a) {
+        tbody.innerHTML += '<tr>' +
+          '<td><span class="font-medium d-block">' + a.product_name + '</span><span class="text-muted" style="font-size:11px;">SKU: ' + a.product_sku + '</span></td>' +
+          '<td>' + a.alert_type + '</td>' +
+          '<td>' + a.details + '</td>' +
+          '<td><span class="status-badge badge-' + (a.severity === 'critical' ? 'critical' : a.severity === 'high' ? 'high' : 'warning') + '">' + a.severity + '</span></td>' +
+          '<td>₦' + a.revenue_latest.toLocaleString() + '</td>' +
+          '</tr>';
+      });
+    }
+
+    function populateSupplierHealth(suppliers) {
+      var container = document.getElementById("supplier-health-container");
+      container.innerHTML = "";
+      suppliers.forEach(function(s) {
+        container.innerHTML += '<div class="col-md-4"><div class="glass-card text-center">' +
+          '<h3 style="font-size:15px; font-weight:600; margin-bottom:5px;">' + s.supplier_name + '</h3>' +
+          '<span class="text-muted d-block mb-3" style="font-size: 12px;">' + s.product_count + ' active matched SKUs</span>' +
+          '<div style="font-size: 20px; font-weight:bold; color:var(--accent-primary);" class="mb-1">' + (s.margin_pct * 100).toFixed(1) + '%</div>' +
+          '<span class="text-muted d-block mb-3" style="font-size:11px;">Average Margin</span>' +
+          '<div class="progress mb-2" style="height:6px;">' +
+          '<div class="progress-bar" style="width: ' + s.health_score + '%; background-color: var(--accent-primary);"></div>' +
+          '</div>' +
+          '<span class="font-semibold text-uppercase" style="font-size: 11px;">Health Score: ' + s.health_score + '/100</span>' +
+          '</div></div>';
+      });
+    }
+
+    function populateCategoryHealth(categories) {
+      var container = document.getElementById("category-health-container");
+      container.innerHTML = "";
+      categories.forEach(function(c) {
+        container.innerHTML += '<div class="col-md-4"><div class="glass-card text-center">' +
+          '<h3 style="font-size:15px; font-weight:600; margin-bottom:5px;">' + c.category_name + '</h3>' +
+          '<span class="text-muted d-block mb-3" style="font-size: 12px;">' + c.product_count + ' items</span>' +
+          '<div style="font-size: 20px; font-weight:bold; color:var(--color-green);" class="mb-1">' + (c.margin_pct * 100).toFixed(1) + '%</div>' +
+          '<span class="text-muted d-block mb-3" style="font-size:11px;">Average Margin</span>' +
+          '<div class="progress mb-2" style="height:6px;">' +
+          '<div class="progress-bar" style="width: ' + c.health_score + '%; background-color: var(--color-green);"></div>' +
+          '</div>' +
+          '<span class="font-semibold text-uppercase" style="font-size: 11px;">Health Score: ' + c.health_score + '/100</span>' +
+          '</div></div>';
+      });
+    }
+
+    function populateMatchesTable(matches) {
+      var tbody = document.getElementById("matches-table-body");
+      tbody.innerHTML = "";
+      matches.forEach(function(m) {
+        var actionBtn = m.is_approved ? 
+          '<span class="text-success font-semibold" style="font-size:12px;"><i class="bi bi-check-circle"></i> Approved</span>' :
+          '<button class="btn btn-sm btn-outline-success me-2" onclick="approveMatchRecord(\'' + m.product_sku + '\', \'' + m.competitor + '\')">Approve</button>';
+          
+        tbody.innerHTML += '<tr>' +
+          '<td>' + m.product_sku + '</td>' +
+          '<td class="text-uppercase">' + m.competitor + '</td>' +
+          '<td><span class="font-medium d-block">' + m.competitor_product_name + '</span><span class="text-muted" style="font-size:11px;">Method: ' + m.match_method + ' (' + m.match_explanation + ')</span></td>' +
+          '<td>₦' + m.latest_price.toLocaleString() + '</td>' +
+          '<td>' + m.confidence_score + '%</td>' +
+          '<td>' + m.match_method + '</td>' +
+          '<td>' + actionBtn + ' <button class="btn btn-sm btn-outline-primary" onclick="triggerSkuRematch(\'' + m.product_sku + '\')">Rematch</button></td>' +
+          '</tr>';
+      });
+    }
+
+    function populateOpportunityTable(prods) {
+      var tbody = document.getElementById("opp-finder-table-body");
+      tbody.innerHTML = "";
+      var opportunities = prods.filter(function(p) { return p.opportunity_score > 30; }).sort(function(a, b) { return b.opportunity_score - a.opportunity_score; });
+      opportunities.forEach(function(o) {
+        var oppVal = (o.market_median_price - o.selling_price_today) * o.quantity_sold_latest;
+        tbody.innerHTML += '<tr>' +
+          '<td><span class="font-medium">' + o.product_name + '</span></td>' +
+          '<td>₦' + o.selling_price_today.toLocaleString() + '</td>' +
+          '<td>₦' + o.market_median_price.toLocaleString() + '</td>' +
+          '<td>₦' + (o.market_median_price - o.selling_price_today).toLocaleString() + '</td>' +
+          '<td>' + o.quantity_sold_latest + '</td>' +
+          '<td>₦' + oppVal.toLocaleString() + '</td>' +
+          '<td><span class="status-badge badge-' + (o.opportunity_score > 70 ? 'green' : 'warning') + '">Rating: ' + o.opportunity_score + '</span></td>' +
+          '</tr>';
+      });
+    }
+
+    function populateRevenueRiskTable(prods) {
+      var tbody = document.getElementById("rev-risk-table-body");
+      tbody.innerHTML = "";
+      var riskItems = prods.filter(function(p) { return p.revenue_at_risk > 0; }).sort(function(a, b) { return b.revenue_at_risk - a.revenue_at_risk; });
+      riskItems.forEach(function(r) {
+        var premium = ((r.selling_price_today - r.market_median_price) / r.market_median_price) * 100;
+        tbody.innerHTML += '<tr>' +
+          '<td><span class="font-medium">' + r.product_name + '</span></td>' +
+          '<td>₦' + r.selling_price_today.toLocaleString() + '</td>' +
+          '<td>₦' + r.market_median_price.toLocaleString() + '</td>' +
+          '<td>+' + premium.toFixed(0) + '%</td>' +
+          '<td>₦' + r.revenue_latest.toLocaleString() + '</td>' +
+          '<td><span class="status-badge badge-critical">₦' + r.revenue_at_risk.toLocaleString() + '</span></td>' +
+          '</tr>';
+      });
+    }
+
+    function populateSettingsForm(cfg) {
+      document.getElementById("cfg-price-spike-critical").value = cfg.thresholds.price_spike_critical;
+      document.getElementById("cfg-cost-spike-critical").value = cfg.thresholds.cost_spike_critical;
+      document.getElementById("cfg-comp-premium-critical").value = cfg.thresholds.competitor_premium_critical;
+      document.getElementById("cfg-email-recipients").value = cfg.notifications.email_recipients;
+      document.getElementById("cfg-github-repo").value = cfg.github.repo;
+    }
+
+    function filterCatalogTable() {
+      var val = document.getElementById("catalog-search").value.toLowerCase();
+      var filtered = globalProducts.filter(function(p) {
+        return p.product_name.toLowerCase().indexOf(val) > -1 || p.product_sku.toLowerCase().indexOf(val) > -1 || p.supplier_name.toLowerCase().indexOf(val) > -1;
+      });
+      populateCatalogTable(filtered);
+    }
+
+    function approveMatchRecord(sku, competitor) {
+      showLoader(true);
+      google.script.run
+        .withSuccessHandler(function() {
+          loadSystemData();
+        })
+        .approveMatch(sku, competitor);
+    }
+
+    function submitOverride() {
+      var sku = document.getElementById("manual-sku").value;
+      var comp = document.getElementById("manual-competitor").value;
+      var name = document.getElementById("manual-name").value;
+      var price = document.getElementById("manual-price").value;
+      
+      if (!sku || !name || !price) {
+        alert("Please enter SKU, Competitor Product Name and Price");
+        return;
+      }
+      
+      showLoader(true);
+      google.script.run
+        .withSuccessHandler(function() {
+          document.getElementById("manual-sku").value = "";
+          document.getElementById("manual-name").value = "";
+          document.getElementById("manual-price").value = "";
+          loadSystemData();
+        })
+        .saveManualOverride(sku, comp, name, price, "Manually updated override via matching manager dashboard console");
+    }
+
+    // Trigger rematching trigger webhook
+    function triggerSkuRematch(sku) {
+      showLoader(true);
+      google.script.run
+        .withSuccessHandler(function(res) {
+          alert(res.message);
+          loadSystemData();
+        })
+        .triggerRematch(sku);
+    }
+
+    function saveSettingsForm() {
+      showLoader(true);
+      var updated = {
+        thresholds: {
+          price_spike_warning: 0.20,
+          price_spike_high: 0.40,
+          price_spike_critical: parseFloat(document.getElementById("cfg-price-spike-critical").value) || 0.70,
+          cost_spike_warning: 0.20,
+          cost_spike_high: 0.40,
+          cost_spike_critical: parseFloat(document.getElementById("cfg-cost-spike-critical").value) || 0.70,
+          competitor_premium_warning: 0.25,
+          competitor_premium_high: 0.50,
+          competitor_premium_critical: parseFloat(document.getElementById("cfg-comp-premium-critical").value) || 1.00
+        },
+        notifications: {
+          email_recipients: document.getElementById("cfg-email-recipients").value,
+          send_daily_summary: true
+        },
+        github: {
+          pat: "",
+          repo: document.getElementById("cfg-github-repo").value
+        },
+        competitors: {
+          mano: true,
+          chowstore: true,
+          spar: true,
+          supersaver: true
+        }
+      };
+      
+      google.script.run
+        .withSuccessHandler(function() {
+          loadSystemData();
+          alert("System configuration successfully saved.");
+        })
+        .saveSystemSettings(updated);
+    }
+
+    function triggerManualSync() {
+      showLoader(true);
+      google.script.run
+        .withSuccessHandler(function(res) {
+          loadSystemData();
+          alert("Database Sync Complete. Alerts summary dispatch trigger fired!");
+        })
+        .runDailySyncJob();
+    }
+
+    // Chart.js render configurations
+    var profitChartInstance = null;
+    var competitorChartInstance = null;
+
+    function renderCharts() {
+      if (globalProducts.length === 0) return;
+      
+      var ctxProfit = document.getElementById("profitChart").getContext("2d");
+      var ctxComp = document.getElementById("competitorChart").getContext("2d");
+      
+      // Cleanup existing charts to prevent overlaps
+      if (profitChartInstance) profitChartInstance.destroy();
+      if (competitorChartInstance) competitorChartInstance.destroy();
+      
+      // Setup text and grid colors dynamically based on active theme
+      var theme = document.documentElement.getAttribute("data-theme") || "light";
+      var textColor = theme === "dark" ? "#9CA3AF" : "#64748B";
+      var gridColor = theme === "dark" ? "rgba(75, 85, 99, 0.2)" : "rgba(226, 232, 240, 0.8)";
+      
+      // Data preparation
+      var names = globalProducts.map(function(p) { return p.product_name.length > 15 ? p.product_name.substring(0, 15) + '...' : p.product_name; });
+      var marginData = globalProducts.map(function(p) { return p.margin_today * 100; });
+      var revenueData = globalProducts.map(function(p) { return p.revenue_latest / 1000; }); // in thousands
+      
+      profitChartInstance = new Chart(ctxProfit, {
+        type: 'bar',
+        data: {
+          labels: names,
+          datasets: [
+            {
+              label: 'Revenue (k₦)',
+              data: revenueData,
+              backgroundColor: theme === 'dark' ? 'rgba(59, 130, 246, 0.65)' : 'rgba(79, 70, 229, 0.65)',
+              borderColor: theme === 'dark' ? '#3B82F6' : '#4F46E5',
+              borderWidth: 1,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Margin %',
+              data: marginData,
+              type: 'line',
+              borderColor: '#10B981',
+              backgroundColor: 'transparent',
+              borderWidth: 3,
+              pointRadius: 4,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: {
+                color: textColor,
+                font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 }
+              }
+            }
+          },
+          scales: {
+            y: {
+              type: 'linear',
+              position: 'left',
+              grid: { color: gridColor },
+              ticks: { color: textColor, font: { family: "'Plus Jakarta Sans', sans-serif", size: 10 } },
+              title: { display: true, text: 'Revenue (k₦)', color: textColor, font: { family: "'Outfit', sans-serif", weight: 600, size: 11 } }
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              ticks: { color: textColor, font: { family: "'Plus Jakarta Sans', sans-serif", size: 10 } },
+              title: { display: true, text: 'Margin (%)', color: textColor, font: { family: "'Outfit', sans-serif", weight: 600, size: 11 } }
+            },
+            x: {
+              grid: { color: gridColor },
+              ticks: { color: textColor, font: { family: "'Plus Jakarta Sans', sans-serif", size: 10 } }
+            }
+          }
+        }
+      });
+
+      // Competitor gap distribution
+      var competitors = ["mano", "chowstore", "spar", "supersaver"];
+      var competitorMedians = competitors.map(function(comp) {
+        var compMatches = globalMatches.filter(function(m) { return m.competitor === comp; });
+        if (compMatches.length === 0) return 0;
+        var sum = 0;
+        compMatches.forEach(function(m) { sum += m.latest_price; });
+        return sum / compMatches.length;
+      });
+
+      competitorChartInstance = new Chart(ctxComp, {
+        type: 'doughnut',
+        data: {
+          labels: ["Mano Average", "Chowdeck Average", "SPAR Average", "SuperSaver Average"],
+          datasets: [{
+            data: competitorMedians,
+            backgroundColor: [
+              'rgba(79, 70, 229, 0.7)',
+              'rgba(16, 185, 129, 0.7)',
+              'rgba(245, 158, 11, 0.7)',
+              'rgba(239, 68, 68, 0.7)'
+            ],
+            borderColor: ['#4F46E5', '#10B981', '#F59E0B', '#EF4444'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: textColor,
+                font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 }
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

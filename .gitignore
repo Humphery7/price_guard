@@ -1,0 +1,160 @@
+# ======================================================
+# Environment Variables & Secrets
+# ======================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets.json
+
+# ======================================================
+# Python
+# ======================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+wheels/
+share/python-wheels/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+
+# Installer Logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Test & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.cache/
+coverage.xml
+*.cover
+
+# Type Checking
+.mypy_cache/
+.pyre/
+.pytype/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Ruff
+.ruff_cache/
+
+# PyCharm
+.idea/
+
+# ======================================================
+# Node.js / TypeScript
+# ======================================================
+node_modules/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Package Managers
+.npm/
+.pnpm-store/
+
+# TypeScript
+*.tsbuildinfo
+
+# Build Output
+dist/
+build/
+out/
+
+# Frameworks
+.next/
+.nuxt/
+.svelte-kit/
+.vite/
+.vercel/
+
+# ======================================================
+# SQL / Databases
+# ======================================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sql-wal
+*.sql-shm
+
+# Database dumps (remove if you intentionally version them)
+*.bak
+*.backup
+
+# ======================================================
+# VS Code
+# ======================================================
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ======================================================
+# Operating System
+# ======================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ======================================================
+# Logs
+# ======================================================
+logs/
+*.log
+
+# ======================================================
+# Temporary Files
+# ======================================================
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# ======================================================
+# Archives
+# ======================================================
+*.zip
+*.tar
+*.gz
+*.7z
+*.rar
+
+# ======================================================
+# Misc
+# ======================================================
+.cache/
+coverage/
