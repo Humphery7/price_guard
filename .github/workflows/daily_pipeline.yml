@@ -3,6 +3,7 @@ name: Daily Competitor Scrapers
 on:
   schedule:
     - cron: '0 11 * * *'
+  workflow_dispatch: #
 
 jobs:
   scrape:
