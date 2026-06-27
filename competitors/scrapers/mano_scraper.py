@@ -219,23 +219,7 @@ async def scrape_all(page):
             await page.goto(full_url, wait_until="domcontentloaded", timeout=20000)
             await page.wait_for_timeout(2000)
 
-            # Check if this page has sub-category tabs or is a flat product list
-            # has_tabs = await page.query_selector(
-            #     "div.category-list-page nav.scrollactive-nav a.v-tab, "
-            #     "div.category-list-page div[class*='list-subs'] a.v-tab"
-            # )
-            #
-            # if has_tabs:
-            #     prods = await scrape_category_page(page, cat_label)
-            # else:
-            #     # Flat product list (no sub-category tabs)
-            #     try:
-            #         await page.wait_for_selector("div.product", timeout=6000)
-            #         prods = await scroll_and_collect(page, cat_label, "")
-            #     except PlaywrightTimeout:
-            #         print(f"   ⚠️ No products on flat page for '{cat_label}'")
-            #         prods = []
-            # Scroll page first so all sections/products load
+      
             await scroll_and_collect(page, cat_label, "")
 
             sections = await page.query_selector_all("div.all-products > div[id]")
@@ -303,7 +287,7 @@ async def main():
     async with async_playwright() as p:
         print("🚀 Launching browser...")
         browser = await p.chromium.launch(
-            headless=False,
+            headless=True,
             args=["--no-sandbox", "--disable-dev-shm-usage"]
         )
         context = await browser.new_context(
